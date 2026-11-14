@@ -428,3 +428,77 @@ func TestAlertDrawing(t *testing.T) {
 		t.Errorf("own icon, default for the rest:\n%s", out)
 	}
 }
+
+func TestAlertPictures(t *testing.T) {
+	r := graphics(DefaultTheme(true))
+	d := r.Parse("> [!NOTE]\n> one\n\n> [!NOTE]\n> two\n\n> [!WARNING]\n> three\n\n> plain quote")
+	if hasPlaceholder(r.Render(d, 40)) {
+		t.Fatal("pictures before Prepare")
+	}
+	// Two kinds: an icon and a bar each; the second note reuses them.
+	seq := r.Prepare(40, d)
+	if n := strings.Count(seq, "a=p"); n != 4 {
+		t.Fatalf("want 4 pictures, got %d", n)
+	}
+	out := r.Render(d, 40)
+	p := ansi.Strip(out)
+	if strings.Contains(p, "ℹ") || strings.Contains(p, "⚠") || !strings.Contains(p, "Note") || !strings.Contains(p, "Warning") {
+		t.Errorf("icons should be pictures, titles text:\n%s", p)
+	}
+	for _, l := range strings.Split(out, "\n") {
+		if strings.Contains(ansi.Strip(l), "plain quote") && (hasPlaceholder(l) || !strings.Contains(l, "▎")) {
+			t.Errorf("plain quotes keep the text bar: %q", l)
+		}
+	}
+	// A resize keeps them: they don't depend on the width.
+	if seq := r.Prepare(30, d); strings.Contains(seq, "a=p") || strings.Contains(seq, "a=d") {
+		t.Errorf("resize resent glyphs: %q", seq)
+	}
+	// The warning left: its two go.
+	if seq := r.Prepare(30, r.Parse("> [!NOTE]\n> one")); strings.Count(seq, "a=d") != 2 {
+		t.Errorf("dropping the warning: %q", seq)
+	}
+	if seq := r.Close(); strings.Count(seq, "a=d") != 2 {
+		t.Errorf("Close: %q", seq)
+	}
+	if hasPlaceholder(r.Render(d, 40)) {
+		t.Error("placeholders after Close")
+	}
+}
+
+func TestAlertPicturesNeedGraphics(t *testing.T) {
+	r := New(Options{Theme: testTheme(), Caps: Caps{Graphics: true}}) // cell size unknown
+	d := r.Parse("> [!TIP]\n> x")
+	if seq := r.Prepare(40, d); seq != "" {
+		t.Errorf("Prepare sent %q", seq)
+	}
+	if out := ansi.Strip(r.Render(d, 40)); !strings.Contains(out, "▎ ✦ Tip") {
+		t.Errorf("text fallback:\n%s", out)
+	}
+	// Text sizing doesn't stop alert pictures.
+	r = New(Options{Theme: testTheme(), Caps: Caps{Graphics: true, TextSizing: true, Cell: kitty.Cell{W: 8, H: 16}}, NewID: counter()})
+	if seq := r.Prepare(40, r.Parse("> [!TIP]\n> x")); strings.Count(seq, "a=p") != 2 {
+		t.Errorf("text sizing: %q", seq)
+	}
+}
+
+func TestForget(t *testing.T) {
+	r := graphics(DefaultTheme(true))
+	d := r.Parse("# Title\n\n> [!NOTE]\n> x")
+	first := r.Prepare(40, d)
+	if r.Prepare(40, d) != "" {
+		t.Fatal("nothing should be resent")
+	}
+	r.Forget()
+	if hasPlaceholder(r.Render(d, 40)) {
+		t.Error("placeholders for forgotten pictures")
+	}
+	again := r.Prepare(40, d)
+	if strings.Contains(again, "a=d") || strings.Count(again, "a=p") != strings.Count(first, "a=p") {
+		t.Errorf("after Forget: %d placements, %d deletes; want %d and none",
+			strings.Count(again, "a=p"), strings.Count(again, "a=d"), strings.Count(first, "a=p"))
+	}
+	if r.Close() == "" {
+		t.Error("Close should delete what was sent again")
+	}
+}

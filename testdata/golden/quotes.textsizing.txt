@@ -8,9 +8,9 @@
 ▎ • a list in a quote
 ▎ • second
 
-▎ ℹ Note
-▎ Alerts come later; this is a
-▎ plain quote for now.
+􎻮̅̅ 􎻮̅̅􎻮̅̍ Note
+􎻮̅̅ Alerts come later; this is a
+􎻮̅̅ plain quote for now.
 === width 60 ===
 ▎ A quote that is long enough to wrap at the narrow widths,
 ▎ with bold inside.
@@ -20,8 +20,8 @@
 ▎ • a list in a quote
 ▎ • second
 
-▎ ℹ Note
-▎ Alerts come later; this is a plain quote for now.
+􎻮̅̅ 􎻮̅̅􎻮̅̍ Note
+􎻮̅̅ Alerts come later; this is a plain quote for now.
 === width 100 ===
 ▎ A quote that is long enough to wrap at the narrow widths, with bold inside.
 ▎
@@ -30,5 +30,5 @@
 ▎ • a list in a quote
 ▎ • second
 
-▎ ℹ Note
-▎ Alerts come later; this is a plain quote for now.
+􎻮̅̅ 􎻮̅̅􎻮̅̍ Note
+􎻮̅̅ Alerts come later; this is a plain quote for now.
