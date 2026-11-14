@@ -1,7 +1,7 @@
 === width 30 ===
 A paragraph with emphasis,
-strong, both, struck and 
-inline code . It goes on long
+strong, both, struck and
+ inline code. It goes on long
 enough to wrap at the narrow
 widths, which is the point.
 
@@ -26,8 +26,8 @@ Wide characters:
 
 Inline <kbd>Ctrl</kbd> HTML.
 === width 60 ===
-A paragraph with emphasis, strong, both, struck and  inline
-code . It goes on long enough to wrap at the narrow widths,
+A paragraph with emphasis, strong, both, struck and  inline
+code. It goes on long enough to wrap at the narrow widths,
 which is the point.
 
 Links: a link, an autolink https://example.org, and a bare
@@ -48,7 +48,7 @@ aligned.
 
 Inline <kbd>Ctrl</kbd> HTML.
 === width 100 ===
-A paragraph with emphasis, strong, both, struck and  inline code . It goes on long enough to wrap at
+A paragraph with emphasis, strong, both, struck and  inline code. It goes on long enough to wrap at
 the narrow widths, which is the point.
 
 Links: a link, an autolink https://example.org, and a bare one www.example.net.

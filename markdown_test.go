@@ -1,6 +1,7 @@
 package markdown
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -84,10 +85,66 @@ func TestRenderTables(t *testing.T) {
 	if !strings.Contains(out, "╭") || !strings.Contains(out, "│ d   │   done │") {
 		t.Fatalf("grid:\n%s", out)
 	}
-	// Too narrow for the grid: cards.
-	out = plain("| A long header | Another long header |\n|---|---|\n| some value | other value |", 20)
-	if strings.Contains(out, "╭") || !strings.Contains(out, "▎ A long header\n▎   some value") {
+	// Too wide: the cells wrap inside their columns, words kept whole,
+	// with rules between rows that wrapped.
+	out = plain("| A long header | Another long header |\n|---|---|\n| some value | other value |\n| x | y |", 20)
+	for _, want := range []string{"│ A long │ Another │", "│ header │ long    │", "│ some   │ other   │", "├────────┼─────────┤\n│ x"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("wrapped grid lacks %q:\n%s", want, out)
+		}
+	}
+	// Words too long for even that: cards.
+	out = plain("| Configuration | Documentation |\n|---|---|\n| some value | other value |", 20)
+	if strings.Contains(out, "╭") || !strings.Contains(out, "▎ Configuration\n▎   some value") {
 		t.Fatalf("cards:\n%s", out)
+	}
+}
+
+func TestFitColumns(t *testing.T) {
+	cases := []struct {
+		natural, least []int
+		avail          int
+		want           []int
+	}{
+		{[]int{5, 10}, []int{5, 6}, 20, []int{5, 10}},        // fits as is
+		{[]int{10, 30}, []int{6, 6}, 20, []int{7, 13}},       // shares by need: 4 and 24 of 8
+		{[]int{10, 30}, []int{6, 16}, 22, []int{6, 16}},      // exactly the least
+		{[]int{10, 30}, []int{6, 16}, 21, nil},               // not even the least: cards
+		{[]int{8, 8, 8}, []int{6, 6, 6}, 20, []int{7, 7, 6}}, // rounding goes left to right
+	}
+	for _, c := range cases {
+		got := fitColumns(c.natural, c.least, c.avail)
+		if fmt.Sprint(got) != fmt.Sprint(c.want) {
+			t.Errorf("fitColumns(%v, %v, %d) = %v, want %v", c.natural, c.least, c.avail, got, c.want)
+		}
+	}
+}
+
+func TestWidthMethod(t *testing.T) {
+	// Rex counts ❤️ as one cell (each code point), Ghostty as two (the
+	// grapheme). Every line of the grid must be equally wide as the
+	// terminal measures it, or the borders don't line up.
+	src := "| A | B |\n|---|---|\n| ❤️ | x |"
+	for m, want := range map[ansi.Method]int{ansi.WcWidth: 9, ansi.GraphemeWidth: 10} {
+		r := New(Options{Theme: testTheme(), Caps: Caps{Width: m}})
+		for _, l := range strings.Split(ansi.Strip(r.Render(r.Parse(src), 40)), "\n") {
+			if w := m.StringWidth(l); w != want {
+				t.Errorf("method %d: line %q is %d wide, want %d", m, l, w, want)
+			}
+		}
+	}
+}
+
+func TestInlineCodePadding(t *testing.T) {
+	out := plain("Run `go test`. Then `vet` it", 40)
+	if !strings.Contains(out, "\u00a0go test.") || !strings.Contains(out, "\u00a0vet\u00a0 it") {
+		t.Errorf("padding: %q", out)
+	}
+	// A line never breaks inside the padding.
+	for _, l := range strings.Split(plain("aaaa bbbb cccc `code` dddd", 16), "\n") {
+		if strings.HasSuffix(l, "\u00a0") && !strings.HasSuffix(l, "code\u00a0") {
+			t.Errorf("broke inside the padding: %q", l)
+		}
 	}
 }
 

@@ -41,3 +41,19 @@ A loose list, with a second paragraph and code:
   ```sh
   go test ./...
   ```
+
+A list holding a quote and a nested ordered list:
+
+- before the quote
+
+  > quoted inside an item
+
+- mixed nesting:
+  1. ordered under a bullet
+     - bullet under that, with a line long enough to wrap at thirty columns
+  2. second
+
+A task list with longer items:
+
+- [x] a finished task whose description is long enough to wrap onto the next line
+- [ ] an open task with `inline code` and a [link](https://example.com)

@@ -23,7 +23,7 @@ ious
 Setext heading
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Heading with  code  and
+Heading with  code  and
 emphasis
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 === width 60 ===
@@ -49,7 +49,7 @@ Supercalifragilisticexpialidocious
 Setext heading
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Heading with  code  and emphasis
+Heading with  code  and emphasis
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 === width 100 ===
 A level one heading
@@ -74,5 +74,5 @@ Supercalifragilisticexpialidocious
 Setext heading
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Heading with  code  and emphasis
+Heading with  code  and emphasis
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -2,6 +2,7 @@ package markdown
 
 import (
 	"image/color"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -26,6 +27,8 @@ type renderer struct {
 	picture func(level int, text string, width int) []string
 	// textSizing draws levels 1 and 2 with kitty's OSC 66.
 	textSizing bool
+	// m measures text the way the terminal does.
+	m ansi.Method
 }
 
 func (r *renderer) fg(c color.Color) lipgloss.Style { return lipgloss.NewStyle().Foreground(c) }
@@ -63,7 +66,7 @@ func (r *renderer) block(n ast.Node, width, depth int) []string {
 	case *ast.Heading:
 		return r.heading(n, width)
 	case *ast.Paragraph, *ast.TextBlock:
-		return wrap(r.inline(n, inlineStyle{}), width)
+		return r.wrap(r.inline(n, inlineStyle{}), width)
 	case *ast.List:
 		return r.list(n, width, depth)
 	case *ast.FencedCodeBlock:
@@ -82,7 +85,7 @@ func (r *renderer) block(n ast.Node, width, depth int) []string {
 	case *ast.HTMLBlock:
 		var out []string
 		for _, l := range r.lines(n) {
-			out = append(out, r.fg(r.th.Muted).Render(ansi.Truncate(l, width, "…")))
+			out = append(out, r.fg(r.th.Muted).Render(r.m.Truncate(l, width, "…")))
 		}
 		return out
 	case *extast.Table:
@@ -128,7 +131,7 @@ func (r *renderer) heading(n *ast.Heading, width int) []string {
 		out = r.picture(n.Level, plainText(n, r.src), width)
 	}
 	if out == nil {
-		out = wrap(r.inline(n, st), width)
+		out = r.wrap(r.inline(n, st), width)
 	}
 	switch n.Level {
 	case 1:
@@ -156,7 +159,7 @@ func (r *renderer) sizedHeading(level int, text string, fg color.Color, width in
 	}
 	st := ansi.NewStyle().Bold().ForegroundColor(fg)
 	var out []string
-	for _, l := range strings.Split(ansi.Wrap(text, max(width/2, 1), " -"), "\n") {
+	for _, l := range strings.Split(r.m.Wrap(text, max(width/2, 1), " -"), "\n") {
 		if l = strings.TrimRight(l, " "); l != "" {
 			out = append(out, st.Styled(kitty.TextSize(l, headingSizes[level])), "")
 		}
@@ -191,7 +194,7 @@ func (r *renderer) list(n *ast.List, width, depth int) []string {
 				marker = r.fg(r.th.Muted).Render(r.th.CheckOff)
 			}
 		}
-		pad := strings.Repeat(" ", ansi.StringWidth(marker)+1)
+		pad := strings.Repeat(" ", r.m.StringWidth(marker)+1)
 		body := r.blocks(item, width-len(pad), depth+1)
 		if !first && !n.IsTight {
 			out = append(out, "")
@@ -235,10 +238,10 @@ func (r *renderer) code(lang string, lines []string, width int) []string {
 	if lang != "" {
 		label = r.fg(r.th.Muted).Background(bg).Render(lang + " ")
 	}
-	out = append(out, panel.Render(strings.Repeat(" ", width-ansi.StringWidth(label)))+label)
+	out = append(out, panel.Render(strings.Repeat(" ", width-r.m.StringWidth(label)))+label)
 	for _, l := range highlight(lang, strings.Join(lines, "\n"), r.th, bg) {
-		for _, part := range strings.Split(ansi.Hardwrap(l, inner, true), "\n") {
-			fill := inner - ansi.StringWidth(part)
+		for _, part := range strings.Split(r.m.Hardwrap(l, inner, true), "\n") {
+			fill := inner - r.m.StringWidth(part)
 			out = append(out, panel.Render(" ")+part+panel.Render(strings.Repeat(" ", max(fill, 0)+1)))
 		}
 	}
@@ -298,8 +301,17 @@ func highlight(lang, code string, th Theme, bg color.Color) []string {
 	return out
 }
 
-// table draws a rounded grid when it fits, and a stack of cards (one per
-// row, "header: value") when it doesn't.
+// A table column shrinks to its longest word, but not below minCell
+// cells, and a word longer than maxWord may be broken. When the columns
+// don't fit even then, the table is drawn as cards.
+const (
+	minCell = 6
+	maxWord = 16
+)
+
+// table draws a rounded grid. When it's too wide, columns shrink and
+// their cells wrap; when even that doesn't fit, each row becomes a card
+// ("header: value") instead.
 func (r *renderer) table(n *extast.Table, width int) []string {
 	var header []string
 	var rows [][]string
@@ -323,38 +335,57 @@ func (r *renderer) table(n *extast.Table, width int) []string {
 		}
 	}
 	cols := len(header)
-	widths := make([]int, cols)
+	natural, least := make([]int, cols), make([]int, cols)
 	for _, row := range append([][]string{header}, rows...) {
 		for i := 0; i < cols && i < len(row); i++ {
-			widths[i] = max(widths[i], ansi.StringWidth(row[i]))
-		}
-	}
-	total := 1
-	for _, w := range widths {
-		total += w + 3
-	}
-	border := r.fg(r.th.Rule)
-	if total <= width {
-		line := func(l, m, rr string) string {
-			var b strings.Builder
-			b.WriteString(l)
-			for i, w := range widths {
-				if i > 0 {
-					b.WriteString(m)
-				}
-				b.WriteString(strings.Repeat("─", w+2))
+			for _, l := range strings.Split(row[i], "\n") {
+				natural[i] = max(natural[i], r.m.StringWidth(l))
 			}
-			return border.Render(b.String() + rr)
+			for _, w := range strings.Fields(ansi.Strip(row[i])) {
+				least[i] = max(least[i], min(r.m.StringWidth(w), maxWord))
+			}
 		}
-		cellsLine := func(cells []string) string {
+	}
+	for i := range least {
+		least[i] = min(max(least[i], minCell), natural[i])
+	}
+	widths := fitColumns(natural, least, width-(1+3*cols))
+	if widths == nil {
+		return r.cards(header, rows, width)
+	}
+
+	border := r.fg(r.th.Rule)
+	line := func(l, m, rr string) string {
+		var b strings.Builder
+		b.WriteString(l)
+		for i, w := range widths {
+			if i > 0 {
+				b.WriteString(m)
+			}
+			b.WriteString(strings.Repeat("─", w+2))
+		}
+		return border.Render(b.String() + rr)
+	}
+	// rowLines draws one row, each cell wrapped to its column.
+	rowLines := func(cells []string) []string {
+		wrapped := make([][]string, cols)
+		height := 1
+		for i, w := range widths {
+			if i < len(cells) {
+				wrapped[i] = r.wrapN(cells[i], w)
+			}
+			height = max(height, len(wrapped[i]))
+		}
+		out := make([]string, height)
+		for k := range height {
 			var b strings.Builder
 			b.WriteString(border.Render("│"))
 			for i, w := range widths {
 				c := ""
-				if i < len(cells) {
-					c = cells[i]
+				if k < len(wrapped[i]) {
+					c = wrapped[i][k]
 				}
-				pad := w - ansi.StringWidth(c)
+				pad := max(w-r.m.StringWidth(c), 0)
 				switch {
 				case i < len(aligns) && aligns[i] == extast.AlignRight:
 					c = strings.Repeat(" ", pad) + c
@@ -365,15 +396,76 @@ func (r *renderer) table(n *extast.Table, width int) []string {
 				}
 				b.WriteString(" " + c + " " + border.Render("│"))
 			}
-			return b.String()
+			out[k] = b.String()
 		}
-		out := []string{line("╭", "┬", "╮"), cellsLine(header), line("├", "┼", "┤")}
-		for _, row := range rows {
-			out = append(out, cellsLine(row))
-		}
-		return append(out, line("╰", "┴", "╯"))
+		return out
 	}
-	// Cards: each row's cells under their headers, with a bar on the left.
+	body := make([][]string, len(rows))
+	tall := false // a row wrapped: rule between rows so they're told apart
+	for i, row := range rows {
+		body[i] = rowLines(row)
+		tall = tall || len(body[i]) > 1
+	}
+	out := []string{line("╭", "┬", "╮")}
+	out = append(out, rowLines(header)...)
+	out = append(out, line("├", "┼", "┤"))
+	for i, b := range body {
+		if i > 0 && tall {
+			out = append(out, line("├", "┼", "┤"))
+		}
+		out = append(out, b...)
+	}
+	return append(out, line("╰", "┴", "╯"))
+}
+
+// fitColumns gives each column a width so they add up to at most avail
+// cells: their natural widths when they fit, otherwise each gets its
+// least width plus a share of the rest in proportion to how much more it
+// would need. It returns nil when even the least widths don't fit.
+func fitColumns(natural, least []int, avail int) []int {
+	widths := slices.Clone(least)
+	sum, need := 0, 0
+	for i, w := range natural {
+		sum += widths[i]
+		need += w - widths[i]
+	}
+	if sum > avail {
+		return nil
+	}
+	extra := avail - sum
+	if extra >= need {
+		return slices.Clone(natural)
+	}
+	// Each column's exact share is extra*more/need; whole cells first,
+	// then what rounding left over to the largest remainders.
+	given := 0
+	rem := make([]int, len(widths))
+	for i, w := range natural {
+		more := w - widths[i]
+		widths[i] += extra * more / need
+		given += extra * more / need
+		rem[i] = extra * more % need
+	}
+	order := make([]int, len(widths))
+	for i := range order {
+		order[i] = i
+	}
+	slices.SortStableFunc(order, func(a, b int) int { return rem[b] - rem[a] })
+	for _, i := range order {
+		if given == extra {
+			break
+		}
+		if widths[i] < natural[i] {
+			widths[i]++
+			given++
+		}
+	}
+	return widths
+}
+
+// cards draws each row as a card: its cells under their headers, with a
+// bar on the left.
+func (r *renderer) cards(header []string, rows [][]string, width int) []string {
 	var out []string
 	bar := r.fg(r.th.Accent2).Render(r.th.Quote) + " "
 	for k, row := range rows {
@@ -382,17 +474,23 @@ func (r *renderer) table(n *extast.Table, width int) []string {
 		}
 		for i, c := range row {
 			if i < len(header) {
-				for _, l := range wrap(r.fg(r.th.Muted).Render(ansi.Strip(header[i])), width-2) {
+				for _, l := range r.wrap(r.fg(r.th.Muted).Render(ansi.Strip(header[i])), width-2) {
 					out = append(out, bar+l)
 				}
 			}
-			for _, l := range wrap(c, width-4) {
+			for _, l := range r.wrap(c, width-4) {
 				out = append(out, bar+"  "+l)
 			}
 		}
 	}
 	return out
 }
+
+// nbsp pads inline code: a space a line can't break at.
+const nbsp = "\u00a0"
+
+// closingPunct are the characters inline code isn't padded before.
+const closingPunct = ".,;:!?)]}'\"…"
 
 // inlineStyle is the style in effect for a run of inline text.
 type inlineStyle struct {
@@ -449,7 +547,15 @@ func (r *renderer) inlineNode(n ast.Node, st inlineStyle) string {
 		if cs.fg == nil {
 			cs.fg = r.th.Accent
 		}
-		return r.render(" "+b.String()+" ", cs)
+		// Padded like a chip, with no-break spaces so a line never breaks
+		// inside it, and no pad before punctuation.
+		right := nbsp
+		if next, ok := n.NextSibling().(*ast.Text); ok {
+			if v := textValue(next, r.src); v != "" && strings.ContainsRune(closingPunct, []rune(v)[0]) {
+				right = ""
+			}
+		}
+		return r.render(nbsp+b.String()+right, cs)
 	case *ast.Emphasis:
 		es := st
 		if n.Level >= 2 {
@@ -496,11 +602,15 @@ func (r *renderer) inlineNode(n ast.Node, st inlineStyle) string {
 	return r.inline(n, st)
 }
 
-// wrap breaks styled text into lines of width cells, keeping hard breaks.
-func wrap(s string, width int) []string {
+// wrap breaks styled text into lines of width cells (8 at least),
+// keeping hard breaks.
+func (r *renderer) wrap(s string, width int) []string { return r.wrapN(s, max(width, 8)) }
+
+// wrapN is wrap without the least width, for table cells.
+func (r *renderer) wrapN(s string, width int) []string {
 	var out []string
 	for _, para := range strings.Split(strings.TrimRight(s, " "), "\n") {
-		w := ansi.Wrap(para, max(width, 8), " -")
+		w := r.m.Wrap(para, max(width, 1), " -")
 		for _, l := range strings.Split(w, "\n") {
 			out = append(out, strings.TrimRight(l, " "))
 		}
