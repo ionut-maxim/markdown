@@ -33,4 +33,4 @@ Markdown is parsed with [goldmark](https://github.com/yuin/goldmark) and its GFM
 
 ## Licence
 
-MIT, see `LICENSE`.
+MIT, see `LICENSE`. JetBrains Mono is under the SIL Open Font License 1.1 (`bigtext/fonts/OFL.txt`).
