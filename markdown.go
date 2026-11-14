@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
@@ -28,6 +29,12 @@ type Caps struct {
 	// than pictures. Leave it off under Bubble Tea: its renderer drops
 	// OSC 66 along with the text inside.
 	TextSizing bool
+	// Width is how the terminal measures text: ansi.WcWidth (the zero
+	// value) counts each code point, as most terminals and Rex do;
+	// ansi.GraphemeWidth counts grapheme clusters, for terminals that
+	// report Unicode mode 2027 (kitty, Ghostty). Bubble Tea makes the same
+	// choice; use the one it uses.
+	Width ansi.Method
 }
 
 // pictures is true when headings are drawn as pictures.
@@ -253,7 +260,7 @@ func (r *Renderer) Render(d *Doc, width int) string {
 	if s, ok := d.cache[width]; ok {
 		return s
 	}
-	rr := &renderer{src: d.src, th: r.opt.Theme, picture: r.headingLines, textSizing: r.opt.Caps.TextSizing}
+	rr := &renderer{src: d.src, th: r.opt.Theme, picture: r.headingLines, textSizing: r.opt.Caps.TextSizing, m: r.opt.Caps.Width}
 	s := strings.Join(rr.blocks(d.root, width, 0), "\n")
 	d.cache[width] = s
 	return s

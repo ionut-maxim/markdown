@@ -4,15 +4,20 @@
 ├─────┼───────────┼───────┤
 │ d   │   done    │     1 │
 │ a   │  answer   │    22 │
-│  x  │ bold cell │   333 │
+│  x  │ bold cell │   333 │
 ╰─────┴───────────┴───────╯
 
-▎ A long header
-▎   some value
-▎ Another long header
-▎   other value
-▎ A third one
-▎   and more text in this cell
+╭────────┬─────────┬─────────╮
+│ A long │ Another │ A third │
+│ header │ long    │ one     │
+│        │ header  │         │
+├────────┼─────────┼─────────┤
+│ some   │ other   │ and     │
+│ value  │ value   │ more    │
+│        │         │ text in │
+│        │         │ this    │
+│        │         │ cell    │
+╰────────┴─────────┴─────────╯
 
 ╭────────┬──────────────╮
 │ 名前   │ 説明         │
@@ -20,21 +25,76 @@
 │ テスト │ 日本語の説明 │
 │ emoji  │ 🎉 party     │
 ╰────────┴──────────────╯
+
+A table that needs its cells
+wrapped below 100 columns:
+
+▎ Setting
+▎    width 
+▎ What it does
+▎   The column width the
+▎   document is laid out for,
+▎   in cells.
+▎ Default
+▎   80
+
+▎ Setting
+▎    theme 
+▎ What it does
+▎   Colours and glyphs:
+▎   bullets, check boxes, the
+▎   quote bar, and the code
+▎   style.
+▎ Default
+▎   dark
+
+▎ Setting
+▎    caps 
+▎ What it does
+▎   What the terminal can do:
+▎   kitty graphics, text
+▎   sizing and the cell size
+▎   in pixels.
+▎ Default
+▎   none
+
+Inline content and an escaped
+pipe:
+
+╭──────────┬─────────────────╮
+│ Syntax   │ Example         │
+├──────────┼─────────────────┤
+│ link     │ example         │
+│ code     │  a | b          │
+│ emphasis │ soft and strong │
+╰──────────┴─────────────────╯
+
+Emoji with a variation
+selector:
+
+╭──────┬───────────╮
+│ Icon │ Meaning   │
+├──────┼───────────┤
+│ ❤️    │ love      │
+│ ✔️    │ done      │
+│ 👍🏽 │ thumbs up │
+╰──────┴───────────╯
 === width 60 ===
 ╭─────┬───────────┬───────╮
 │ Key │  Action   │ Count │
 ├─────┼───────────┼───────┤
 │ d   │   done    │     1 │
 │ a   │  answer   │    22 │
-│  x  │ bold cell │   333 │
+│  x  │ bold cell │   333 │
 ╰─────┴───────────┴───────╯
 
-▎ A long header
-▎   some value
-▎ Another long header
-▎   other value
-▎ A third one
-▎   and more text in this cell
+╭──────────────┬──────────────────┬────────────────────────╮
+│ A long       │ Another long     │ A third one            │
+│ header       │ header           │                        │
+├──────────────┼──────────────────┼────────────────────────┤
+│ some value   │ other value      │ and more text in this  │
+│              │                  │ cell                   │
+╰──────────────┴──────────────────┴────────────────────────╯
 
 ╭────────┬──────────────╮
 │ 名前   │ 説明         │
@@ -42,13 +102,50 @@
 │ テスト │ 日本語の説明 │
 │ emoji  │ 🎉 party     │
 ╰────────┴──────────────╯
+
+A table that needs its cells wrapped below 100 columns:
+
+╭─────────┬──────────────────────────────────────┬─────────╮
+│ Setting │ What it does                         │ Default │
+├─────────┼──────────────────────────────────────┼─────────┤
+│  width  │ The column width the document is     │   80    │
+│         │ laid out for, in cells.              │         │
+├─────────┼──────────────────────────────────────┼─────────┤
+│  theme  │ Colours and glyphs: bullets, check   │  dark   │
+│         │ boxes, the quote bar, and the code   │         │
+│         │ style.                               │         │
+├─────────┼──────────────────────────────────────┼─────────┤
+│  caps   │ What the terminal can do: kitty      │  none   │
+│         │ graphics, text sizing and the cell   │         │
+│         │ size in pixels.                      │         │
+╰─────────┴──────────────────────────────────────┴─────────╯
+
+Inline content and an escaped pipe:
+
+╭──────────┬─────────────────╮
+│ Syntax   │ Example         │
+├──────────┼─────────────────┤
+│ link     │ example         │
+│ code     │  a | b          │
+│ emphasis │ soft and strong │
+╰──────────┴─────────────────╯
+
+Emoji with a variation selector:
+
+╭──────┬───────────╮
+│ Icon │ Meaning   │
+├──────┼───────────┤
+│ ❤️    │ love      │
+│ ✔️    │ done      │
+│ 👍🏽 │ thumbs up │
+╰──────┴───────────╯
 === width 100 ===
 ╭─────┬───────────┬───────╮
 │ Key │  Action   │ Count │
 ├─────┼───────────┼───────┤
 │ d   │   done    │     1 │
 │ a   │  answer   │    22 │
-│  x  │ bold cell │   333 │
+│  x  │ bold cell │   333 │
 ╰─────┴───────────┴───────╯
 
 ╭───────────────┬─────────────────────┬────────────────────────────╮
@@ -63,3 +160,36 @@
 │ テスト │ 日本語の説明 │
 │ emoji  │ 🎉 party     │
 ╰────────┴──────────────╯
+
+A table that needs its cells wrapped below 100 columns:
+
+╭─────────┬──────────────────────────────────────────────────────────────────────────────┬─────────╮
+│ Setting │ What it does                                                                 │ Default │
+├─────────┼──────────────────────────────────────────────────────────────────────────────┼─────────┤
+│  width  │ The column width the document is laid out for, in cells.                     │   80    │
+├─────────┼──────────────────────────────────────────────────────────────────────────────┼─────────┤
+│  theme  │ Colours and glyphs: bullets, check boxes, the quote bar, and the code style. │  dark   │
+├─────────┼──────────────────────────────────────────────────────────────────────────────┼─────────┤
+│  caps   │ What the terminal can do: kitty graphics, text sizing and the cell size in   │  none   │
+│         │ pixels.                                                                      │         │
+╰─────────┴──────────────────────────────────────────────────────────────────────────────┴─────────╯
+
+Inline content and an escaped pipe:
+
+╭──────────┬─────────────────╮
+│ Syntax   │ Example         │
+├──────────┼─────────────────┤
+│ link     │ example         │
+│ code     │  a | b          │
+│ emphasis │ soft and strong │
+╰──────────┴─────────────────╯
+
+Emoji with a variation selector:
+
+╭──────┬───────────╮
+│ Icon │ Meaning   │
+├──────┼───────────┤
+│ ❤️    │ love      │
+│ ✔️    │ done      │
+│ 👍🏽 │ thumbs up │
+╰──────┴───────────╯
