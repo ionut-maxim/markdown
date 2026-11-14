@@ -1,0 +1,112 @@
+=== width 30 ===
+⟦s=2|A level one⟧
+
+⟦s=2|heading⟧
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Text under it.
+
+⟦s=2:n=3:d=4:v=2|Level two⟧
+
+⟦s=2:n=3:d=4:v=2|heading that is⟧
+
+⟦s=2:n=3:d=4:v=2|long enough to⟧
+
+⟦s=2:n=3:d=4:v=2|wrap on a phone⟧
+
+──────────────────────────────
+
+Level three
+
+Level four
+
+Level five
+
+Level six
+
+⟦s=2|Supercalifragil⟧
+
+⟦s=2|isticexpialidoc⟧
+
+⟦s=2|ious⟧
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⟦s=2|Setext heading⟧
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⟦s=2|Heading with⟧
+
+⟦s=2|code and⟧
+
+⟦s=2|emphasis⟧
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+=== width 60 ===
+⟦s=2|A level one heading⟧
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Text under it.
+
+⟦s=2:n=3:d=4:v=2|Level two heading that is long⟧
+
+⟦s=2:n=3:d=4:v=2|enough to wrap on a phone⟧
+
+────────────────────────────────────────────────────────────
+
+Level three
+
+Level four
+
+Level five
+
+Level six
+
+⟦s=2|Supercalifragilisticexpialidoc⟧
+
+⟦s=2|ious⟧
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⟦s=2|Setext heading⟧
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⟦s=2|Heading with code and emphasis⟧
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+=== width 100 ===
+⟦s=2|A level one heading⟧
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Text under it.
+
+⟦s=2:n=3:d=4:v=2|Level two heading that is long enough to wrap on a⟧
+
+⟦s=2:n=3:d=4:v=2|phone⟧
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Level three
+
+Level four
+
+Level five
+
+Level six
+
+⟦s=2|Supercalifragilisticexpialidocious⟧
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⟦s=2|Setext heading⟧
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⟦s=2|Heading with code and emphasis⟧
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

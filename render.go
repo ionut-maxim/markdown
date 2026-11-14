@@ -13,6 +13,8 @@ import (
 	"github.com/yuin/goldmark/ast"
 	extast "github.com/yuin/goldmark/extension/ast"
 	"github.com/yuin/goldmark/util"
+
+	"github.com/ionut-maxim/markdown/kitty"
 )
 
 // renderer draws one document for one width.
@@ -22,6 +24,8 @@ type renderer struct {
 	// picture returns placeholder lines for a heading drawn as an image
 	// at most width cells wide, or nil to draw it as text.
 	picture func(level int, text string, width int) []string
+	// textSizing draws levels 1 and 2 with kitty's OSC 66.
+	textSizing bool
 }
 
 func (r *renderer) fg(c color.Color) lipgloss.Style { return lipgloss.NewStyle().Foreground(c) }
@@ -111,11 +115,16 @@ func (r *renderer) heading(n *ast.Heading, width int) []string {
 		st.fg = r.th.Accent2
 	case 3:
 		st.fg = r.th.Text
-	default:
+	case 4, 5:
 		st.fg = r.th.Subtle
+	default:
+		st.fg = r.th.Muted
 	}
 	var out []string
-	if r.picture != nil && n.Level <= 2 {
+	switch {
+	case r.textSizing && n.Level <= 2:
+		out = r.sizedHeading(n.Level, plainText(n, r.src), st.fg, width)
+	case r.picture != nil && n.Level <= 2:
 		out = r.picture(n.Level, plainText(n, r.src), width)
 	}
 	if out == nil {
@@ -126,6 +135,31 @@ func (r *renderer) heading(n *ast.Heading, width int) []string {
 		out = append(out, r.fg(r.th.Accent).Render(strings.Repeat("━", width)))
 	case 2:
 		out = append(out, r.fg(r.th.Rule).Render(strings.Repeat("─", width)))
+	}
+	return out
+}
+
+// headingSizes are the OSC 66 sizes of level 1 and 2 headings: both two
+// rows high and two cells a character, level 2 drawn at three quarters
+// inside them.
+var headingSizes = map[int]kitty.Size{
+	1: {Scale: 2},
+	2: {Scale: 2, Num: 3, Den: 4, VAlign: 2},
+}
+
+// sizedHeading draws a heading with kitty's text sizing, wrapped at half
+// the width. Each line takes two rows: the second stays empty, since the
+// big characters cover it.
+func (r *renderer) sizedHeading(level int, text string, fg color.Color, width int) []string {
+	if text == "" {
+		return nil
+	}
+	st := ansi.NewStyle().Bold().ForegroundColor(fg)
+	var out []string
+	for _, l := range strings.Split(ansi.Wrap(text, max(width/2, 1), " -"), "\n") {
+		if l = strings.TrimRight(l, " "); l != "" {
+			out = append(out, st.Styled(kitty.TextSize(l, headingSizes[level])), "")
+		}
 	}
 	return out
 }

@@ -23,9 +23,17 @@ type Caps struct {
 	// Cell is the terminal's cell size in pixels (CSI 16 t). Big
 	// headings are drawn only once it's known.
 	Cell kitty.Cell
+	// TextSizing is true when the terminal draws big text itself with
+	// kitty's OSC 66 (kitty.TextSizingQuery). Headings then use it rather
+	// than pictures. Leave it off under Bubble Tea: its renderer drops
+	// OSC 66 along with the text inside.
+	TextSizing bool
 }
 
-func (c Caps) pictures() bool { return c.Graphics && c.Cell.W > 0 && c.Cell.H > 0 }
+// pictures is true when headings are drawn as pictures.
+func (c Caps) pictures() bool {
+	return c.Graphics && !c.TextSizing && c.Cell.W > 0 && c.Cell.H > 0
+}
 
 // Options configure a Renderer.
 type Options struct {
@@ -245,7 +253,7 @@ func (r *Renderer) Render(d *Doc, width int) string {
 	if s, ok := d.cache[width]; ok {
 		return s
 	}
-	rr := &renderer{src: d.src, th: r.opt.Theme, picture: r.headingLines}
+	rr := &renderer{src: d.src, th: r.opt.Theme, picture: r.headingLines, textSizing: r.opt.Caps.TextSizing}
 	s := strings.Join(rr.blocks(d.root, width, 0), "\n")
 	d.cache[width] = s
 	return s
