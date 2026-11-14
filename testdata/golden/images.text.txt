@@ -1,0 +1,19 @@
+=== width 30 ===
+An image inline: ▣ a
+screenshot in a sentence.
+
+▣ image
+
+▣ linked image
+=== width 60 ===
+An image inline: ▣ a screenshot in a sentence.
+
+▣ image
+
+▣ linked image
+=== width 100 ===
+An image inline: ▣ a screenshot in a sentence.
+
+▣ image
+
+▣ linked image

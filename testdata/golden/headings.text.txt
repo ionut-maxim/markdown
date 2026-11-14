@@ -1,0 +1,78 @@
+=== width 30 ===
+A level one heading
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Text under it.
+
+Level two heading that is long
+enough to wrap on a phone
+──────────────────────────────
+
+Level three
+
+Level four
+
+Level five
+
+Level six
+
+Supercalifragilisticexpialidoc
+ious
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Setext heading
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Heading with  code  and
+emphasis
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+=== width 60 ===
+A level one heading
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Text under it.
+
+Level two heading that is long enough to wrap on a phone
+────────────────────────────────────────────────────────────
+
+Level three
+
+Level four
+
+Level five
+
+Level six
+
+Supercalifragilisticexpialidocious
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Setext heading
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Heading with  code  and emphasis
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+=== width 100 ===
+A level one heading
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Text under it.
+
+Level two heading that is long enough to wrap on a phone
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Level three
+
+Level four
+
+Level five
+
+Level six
+
+Supercalifragilisticexpialidocious
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Setext heading
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Heading with  code  and emphasis
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
