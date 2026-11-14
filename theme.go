@@ -2,6 +2,7 @@ package markdown
 
 import (
 	"image/color"
+	"maps"
 
 	"charm.land/lipgloss/v2"
 )
@@ -27,6 +28,10 @@ type Theme struct {
 	Quote             string   // the bar before quoted lines
 	ImageIcon         string   // before an image shown as a link
 
+	// AlertIcons go before an alert's title; missing ones fall back to
+	// DefaultTheme's.
+	AlertIcons map[AlertKind]string
+
 	// CodeStyle is the Chroma style for code blocks. Empty means
 	// catppuccin-mocha on a dark background and catppuccin-latte on a
 	// light one.
@@ -40,6 +45,7 @@ func DefaultTheme(dark bool) Theme {
 	th := Theme{
 		Dark:    dark,
 		Bullets: []string{"•", "◦", "▪"}, CheckOn: "☑", CheckOff: "☐", Quote: "▎", ImageIcon: "▣",
+		AlertIcons: maps.Clone(defaultAlertIcons),
 	}
 	if dark {
 		th.Text, th.Subtle, th.Muted = c("#E6E6EB"), c("#9BA0AB"), c("#5F6470")
@@ -71,6 +77,25 @@ func (th Theme) codeStyle() string {
 		return "catppuccin-mocha"
 	}
 	return "catppuccin-latte"
+}
+
+// defaultAlertIcons are one cell wide in every terminal tried, with
+// either way of measuring.
+var defaultAlertIcons = map[AlertKind]string{
+	AlertNote: "ℹ", AlertTip: "✦", AlertImportant: "‼", AlertWarning: "⚠", AlertCaution: "⊘",
+}
+
+func (th Theme) alertIcon(k AlertKind) string {
+	if s, ok := th.AlertIcons[k]; ok {
+		return s
+	}
+	return defaultAlertIcons[k]
+}
+
+// alertColor is GitHub's colour for each kind: note blue, tip green,
+// important purple (the accent), warning yellow, caution red.
+func (th Theme) alertColor(k AlertKind) color.Color {
+	return [...]color.Color{th.Blue, th.Green, th.Accent, th.Yellow, th.Red}[k]
 }
 
 // headingColor is the colour of a level 1 or 2 heading.
