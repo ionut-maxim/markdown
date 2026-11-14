@@ -1,6 +1,7 @@
 package markdown
 
 import (
+	"context"
 	"image/color"
 	"slices"
 	"strings"
@@ -57,6 +58,12 @@ type Options struct {
 	// NewID gives kitty image ids; nil means kitty.NewID. Tests set it to
 	// get the same output every run.
 	NewID func() int
+	// Fetch gets an image's bytes (PNG, JPEG, GIF or WebP) for Jobs to
+	// decode, with whatever login or URL rules the app has. The library
+	// never fetches anything itself; nil shows images as links.
+	Fetch func(ctx context.Context, url string) ([]byte, error)
+	// MaxImageRows is the tallest an image is drawn, in rows; 0 means 20.
+	MaxImageRows int
 }
 
 // Renderer renders markdown documents and owns the pictures it sends to
@@ -71,6 +78,7 @@ type Renderer struct {
 	md       goldmark.Markdown
 	headings map[headingKey]*picture
 	glyphs   map[glyphKey]*picture
+	images   map[string]*imageEntry
 	gen      int // bumped whenever what Render draws may change
 }
 
@@ -99,6 +107,7 @@ func New(opt Options) *Renderer {
 			goldmark.WithParserOptions(parser.WithASTTransformers(util.Prioritized(alertTransformer{}, 1000)))),
 		headings: map[headingKey]*picture{},
 		glyphs:   map[glyphKey]*picture{},
+		images:   map[string]*imageEntry{},
 	}
 }
 
@@ -175,12 +184,16 @@ func colorKey(c color.Color) [4]uint32 {
 // it returns (with tea.Raw in Bubble Tea). It returns "" when nothing
 // changed.
 //
+// It also returns a Job for each image not fetched yet (only with
+// Options.Fetch and kitty graphics). Run them off the UI goroutine and
+// pass each Result to Loaded.
+//
 // Pictures belong to the screen they were sent on: the main screen and
 // the alternate one keep their own, and entering the alternate screen or
 // clearing it drops them. Send what Prepare returns once the program is
 // on the screen it draws to (in Bubble Tea, after the first frame), and
 // after a switch or a clear call Forget, then Prepare again.
-func (r *Renderer) Prepare(width int, docs ...*Doc) string {
+func (r *Renderer) Prepare(width int, docs ...*Doc) (string, []Job) {
 	width = max(width, minWidth)
 	// The headings wanted, in document order so ids are given out in
 	// the same order every time.
@@ -209,6 +222,8 @@ func (r *Renderer) Prepare(width int, docs ...*Doc) string {
 	}
 	glyphs := r.wantGlyphs(docs)
 	gone = append(gone, r.dropGlyphs(glyphs)...)
+	imgGone, imgSeq, jobs := r.prepareImages(width, docs)
+	gone = append(gone, imgGone...)
 	var seq strings.Builder
 	seq.WriteString(deletes(gone))
 	for _, k := range order {
@@ -235,7 +250,8 @@ func (r *Renderer) Prepare(width int, docs ...*Doc) string {
 		r.gen++
 	}
 	r.sendGlyphs(glyphs, &seq)
-	return seq.String()
+	seq.WriteString(imgSeq)
+	return seq.String(), jobs
 }
 
 // Close returns the escape sequences that delete every picture this
@@ -250,6 +266,12 @@ func (r *Renderer) Close() string {
 		delete(r.headings, k)
 	}
 	gone = append(gone, r.dropGlyphs(nil)...)
+	for url, e := range r.images {
+		if e.cols > 0 {
+			gone = append(gone, e.id)
+		}
+		delete(r.images, url)
+	}
 	r.gen++
 	return deletes(gone)
 }
@@ -260,6 +282,9 @@ func (r *Renderer) Close() string {
 func (r *Renderer) Forget() {
 	clear(r.headings)
 	clear(r.glyphs)
+	for _, e := range r.images {
+		e.cols, e.rows = 0, 0 // decoded images are kept: no new fetch
+	}
 	r.gen++
 }
 
@@ -287,7 +312,7 @@ func (r *Renderer) Render(d *Doc, width int) string {
 	if s, ok := d.cache[width]; ok {
 		return s
 	}
-	rr := &renderer{src: d.src, th: r.opt.Theme, picture: r.headingLines, alertGlyphs: r.alertGlyphs,
+	rr := &renderer{src: d.src, th: r.opt.Theme, picture: r.headingLines, alertGlyphs: r.alertGlyphs, image: r.imageView,
 		textSizing: r.opt.Caps.TextSizing, m: r.opt.Caps.Width}
 	s := strings.Join(rr.blocks(d.root, width, 0), "\n")
 	d.cache[width] = s
