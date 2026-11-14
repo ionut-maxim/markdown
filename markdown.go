@@ -9,7 +9,9 @@ import (
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/text"
+	"github.com/yuin/goldmark/util"
 	"golang.org/x/image/font/opentype"
 
 	"github.com/ionut-maxim/markdown/bigtext"
@@ -88,8 +90,9 @@ func New(opt Options) *Renderer {
 		opt.NewID = kitty.NewID
 	}
 	return &Renderer{
-		opt:      opt,
-		md:       goldmark.New(goldmark.WithExtensions(extension.GFM)),
+		opt: opt,
+		md: goldmark.New(goldmark.WithExtensions(extension.GFM),
+			goldmark.WithParserOptions(parser.WithASTTransformers(util.Prioritized(alertTransformer{}, 1000)))),
 		headings: map[headingKey]*picture{},
 	}
 }

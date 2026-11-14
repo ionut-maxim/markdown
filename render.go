@@ -74,12 +74,9 @@ func (r *renderer) block(n ast.Node, width, depth int) []string {
 	case *ast.CodeBlock:
 		return r.code("", r.lines(n), width)
 	case *ast.Blockquote:
-		bar := r.fg(r.th.Accent2).Render(r.th.Quote) + " "
-		inner := r.blocks(n, width-2, depth)
-		for i, l := range inner {
-			inner[i] = bar + l
-		}
-		return inner
+		return r.barred(r.blocks(n, width-2, depth), r.th.Accent2)
+	case *alert:
+		return r.alert(n, width, depth)
 	case *ast.ThematicBreak:
 		return []string{r.fg(r.th.Rule).Render(strings.Repeat("─", width))}
 	case *ast.HTMLBlock:
@@ -140,6 +137,28 @@ func (r *renderer) heading(n *ast.Heading, width int) []string {
 		out = append(out, r.fg(r.th.Rule).Render(strings.Repeat("─", width)))
 	}
 	return out
+}
+
+// alert draws a GitHub alert: a bar in the alert's colour, its icon and
+// title, then its blocks.
+func (r *renderer) alert(n *alert, width, depth int) []string {
+	c := r.th.alertColor(n.kind)
+	title := lipgloss.NewStyle().Foreground(c).Bold(true).Render(r.th.alertIcon(n.kind) + " " + n.kind.String())
+	return r.barred(append([]string{title}, r.blocks(n, width-2, depth)...), c)
+}
+
+// barred puts the quote bar, in colour c, before each line; a blank line
+// gets the bar alone.
+func (r *renderer) barred(lines []string, c color.Color) []string {
+	bar := r.fg(c).Render(r.th.Quote)
+	for i, l := range lines {
+		if l == "" {
+			lines[i] = bar
+		} else {
+			lines[i] = bar + " " + l
+		}
+	}
+	return lines
 }
 
 // headingSizes are the OSC 66 sizes of level 1 and 2 headings: both two

@@ -1,0 +1,122 @@
+=== width 30 ===
+▎ ℹ Note
+▎ Useful information that
+▎ users should know, even when
+▎ skimming content.
+
+▎ ✦ Tip
+▎ Helpful advice for doing
+▎ things better or more
+▎ easily.
+
+▎ ‼ Important
+▎ Key information users need
+▎ to know to achieve their
+▎ goal.
+
+▎ ⚠ Warning
+▎ Urgent info that needs
+▎ immediate user attention to
+▎ avoid problems.
+
+▎ ⊘ Caution
+▎ Advises about risks or
+▎ negative outcomes of certain
+▎ actions.
+
+▎ ℹ Note
+▎ Lowercase works, and so do
+▎ several blocks:
+▎
+▎ • a list
+▎ • in the alert
+▎
+▎                          sh 
+▎  go test ./...              
+▎                             
+
+These stay plain quotes, as on
+GitHub:
+
+▎ [!NOTE] text on the marker
+▎ line
+
+▎ [!DANGER] an unknown kind
+
+• in a list:
+
+  ▎ [!NOTE] alerts are only
+  ▎ drawn at the top level
+=== width 60 ===
+▎ ℹ Note
+▎ Useful information that users should know, even when
+▎ skimming content.
+
+▎ ✦ Tip
+▎ Helpful advice for doing things better or more easily.
+
+▎ ‼ Important
+▎ Key information users need to know to achieve their goal.
+
+▎ ⚠ Warning
+▎ Urgent info that needs immediate user attention to avoid
+▎ problems.
+
+▎ ⊘ Caution
+▎ Advises about risks or negative outcomes of certain
+▎ actions.
+
+▎ ℹ Note
+▎ Lowercase works, and so do several blocks:
+▎
+▎ • a list
+▎ • in the alert
+▎
+▎                                                        sh 
+▎  go test ./...                                            
+▎                                                           
+
+These stay plain quotes, as on GitHub:
+
+▎ [!NOTE] text on the marker line
+
+▎ [!DANGER] an unknown kind
+
+• in a list:
+
+  ▎ [!NOTE] alerts are only drawn at the top level
+=== width 100 ===
+▎ ℹ Note
+▎ Useful information that users should know, even when skimming content.
+
+▎ ✦ Tip
+▎ Helpful advice for doing things better or more easily.
+
+▎ ‼ Important
+▎ Key information users need to know to achieve their goal.
+
+▎ ⚠ Warning
+▎ Urgent info that needs immediate user attention to avoid problems.
+
+▎ ⊘ Caution
+▎ Advises about risks or negative outcomes of certain actions.
+
+▎ ℹ Note
+▎ Lowercase works, and so do several blocks:
+▎
+▎ • a list
+▎ • in the alert
+▎
+▎                                                                                                sh 
+▎  go test ./...                                                                                    
+▎                                                                                                   
+
+These stay plain quotes, as on GitHub:
+
+▎ [!NOTE] text on the marker line
+
+▎ [!DANGER] an unknown kind
+
+• in a list:
+
+  ▎ [!NOTE] alerts are only drawn at the top level

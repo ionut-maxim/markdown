@@ -8,6 +8,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 	xkitty "github.com/charmbracelet/x/ansi/kitty"
+	"github.com/yuin/goldmark/ast"
 
 	"github.com/ionut-maxim/markdown/kitty"
 )
@@ -362,5 +363,68 @@ func TestTextSizingWithoutGraphics(t *testing.T) {
 	r := New(Options{Theme: testTheme(), Caps: Caps{TextSizing: true}})
 	if out := r.Render(r.Parse("# Title"), 40); !strings.Contains(out, "\x1b]66;s=2;Title\a") {
 		t.Errorf("text sizing doesn't need graphics: %q", out)
+	}
+}
+
+// TestAlertRules runs the cases checked against GitHub's own renderer
+// (gh api markdown, mode gfm) on Nov 14, 2026.
+func TestAlertRules(t *testing.T) {
+	cases := []struct {
+		name, src string
+		kind      AlertKind
+		alert     bool
+	}{
+		{"uppercase", "> [!NOTE]\n> text", AlertNote, true},
+		{"lowercase", "> [!note]\n> text", AlertNote, true},
+		{"mixed case", "> [!Tip]\n> text", AlertTip, true},
+		{"trailing spaces", "> [!NOTE]   \n> text", AlertNote, true},
+		{"blank line after marker", "> [!NOTE]\n>\n> text", AlertNote, true},
+		{"lazy continuation", "> [!CAUTION]\ntext lazily continued", AlertCaution, true},
+		{"indented quote", "   > [!IMPORTANT]\n   > text", AlertImportant, true},
+		{"warning", "> [!WARNING]\n> text", AlertWarning, true},
+		{"text on marker line", "> [!NOTE] text here", 0, false},
+		{"text after marker, more lines", "> [!WARNING] text\n> more", 0, false},
+		{"marker only", "> [!NOTE]", 0, false},
+		{"unknown kind", "> [!DANGER]\n> text", 0, false},
+		{"in a list", "- item\n\n  > [!NOTE]\n  > text", 0, false},
+		{"nested in a quote", "> outer\n>\n> > [!NOTE]\n> > text", 0, false},
+		{"marker on second line", "> text\n> [!NOTE]", 0, false},
+		{"space inside", "> [! NOTE]\n> text", 0, false},
+		{"emphasised marker", "> *[!NOTE]*\n> text", 0, false},
+	}
+	r := New(Options{Theme: testTheme()})
+	for _, c := range cases {
+		d := r.Parse(c.src)
+		var found *alert
+		_ = ast.Walk(d.root, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+			if a, ok := n.(*alert); ok && entering {
+				found = a
+			}
+			return ast.WalkContinue, nil
+		})
+		switch {
+		case c.alert && found == nil:
+			t.Errorf("%s: want a %s alert, got a quote", c.name, c.kind)
+		case c.alert && found.kind != c.kind:
+			t.Errorf("%s: kind %s, want %s", c.name, found.kind, c.kind)
+		case !c.alert && found != nil:
+			t.Errorf("%s: want a quote, got a %s alert", c.name, found.kind)
+		}
+		if out := ansi.Strip(r.Render(d, 40)); c.alert && strings.Contains(strings.ToUpper(out), "[!") {
+			t.Errorf("%s: marker left in:\n%s", c.name, out)
+		}
+	}
+}
+
+func TestAlertDrawing(t *testing.T) {
+	out := plain("> [!WARNING]\n> Some **bold** text.\n>\n> Second paragraph.", 40)
+	want := "▎ ⚠ Warning\n▎ Some bold text.\n▎\n▎ Second paragraph."
+	if strings.TrimRight(out, " ") != want {
+		t.Errorf("got:\n%s\nwant:\n%s", out, want)
+	}
+	th := testTheme()
+	th.AlertIcons = map[AlertKind]string{AlertWarning: "W"}
+	if out := ansi.Strip(render("> [!WARNING]\n> x\n\n> [!TIP]\n> y", 40, th)); !strings.Contains(out, "W Warning") || !strings.Contains(out, "✦ Tip") {
+		t.Errorf("own icon, default for the rest:\n%s", out)
 	}
 }
