@@ -211,7 +211,7 @@ func TestHeadingPictures(t *testing.T) {
 	if out := r.Render(d, 60); hasPlaceholder(out) {
 		t.Fatal("pictures drawn before Prepare")
 	}
-	seq := r.Prepare(60, d)
+	seq := prep(r, 60, d)
 	if strings.Count(seq, "a=p") != 2 {
 		t.Fatalf("want 2 placements (levels 1 and 2), got %q", seq)
 	}
@@ -226,12 +226,12 @@ func TestHeadingPictures(t *testing.T) {
 		t.Errorf("levels 1 and 2 should be pictures, 3 text:\n%s", p)
 	}
 
-	if again := r.Prepare(60, d); again != "" {
+	if again := prep(r, 60, d); again != "" {
 		t.Errorf("second Prepare sent %q", again)
 	}
 
 	// A new width: the old pictures go, new ones come.
-	seq = r.Prepare(40, d)
+	seq = prep(r, 40, d)
 	if strings.Count(seq, "a=d") != 2 || strings.Count(seq, "a=p") != 2 {
 		t.Errorf("resize: %q", seq)
 	}
@@ -256,7 +256,7 @@ func TestHeadingPicturesNeedCaps(t *testing.T) {
 	} {
 		r := New(Options{Theme: testTheme(), Caps: caps, NewID: counter()})
 		d := r.Parse("# Title")
-		if seq := r.Prepare(60, d); seq != "" {
+		if seq := prep(r, 60, d); seq != "" {
 			t.Errorf("%s: Prepare sent %q", name, seq)
 		}
 		if hasPlaceholder(r.Render(d, 60)) {
@@ -268,12 +268,12 @@ func TestHeadingPicturesNeedCaps(t *testing.T) {
 func TestHeadingPicturesAcrossDocs(t *testing.T) {
 	r := graphics(testTheme())
 	a, b := r.Parse("# One"), r.Parse("# Two")
-	r.Prepare(60, a, b)
+	prep(r, 60, a, b)
 	if !hasPlaceholder(r.Render(a, 60)) || !hasPlaceholder(r.Render(b, 60)) {
 		t.Fatal("both documents should have their pictures")
 	}
 	// b left the screen: only its picture goes.
-	if seq := r.Prepare(60, a); strings.Count(seq, "a=d") != 1 || strings.Contains(seq, "a=p") {
+	if seq := prep(r, 60, a); strings.Count(seq, "a=d") != 1 || strings.Contains(seq, "a=p") {
 		t.Errorf("dropping a document: %q", seq)
 	}
 	if !hasPlaceholder(r.Render(a, 60)) || hasPlaceholder(r.Render(b, 60)) {
@@ -284,10 +284,10 @@ func TestHeadingPicturesAcrossDocs(t *testing.T) {
 func TestHeadingPictureTooWide(t *testing.T) {
 	r := graphics(testTheme())
 	d := r.Parse("# Pneumonoultramicroscopicsilicovolcanoconiosis")
-	if seq := r.Prepare(16, d); seq != "" {
+	if seq := prep(r, 16, d); seq != "" {
 		t.Errorf("a word too wide for the width sent %q", seq)
 	}
-	if r.Prepare(16, d) != "" {
+	if prep(r, 16, d) != "" {
 		t.Error("tried again")
 	}
 	if !strings.Contains(ansi.Strip(r.Render(d, 16)), "Pneumono") {
@@ -298,7 +298,7 @@ func TestHeadingPictureTooWide(t *testing.T) {
 	for _, src := range []string{"> # Quoted heading that is long", "> # Quotedheadingthatislong", "- # Heading in a list item"} {
 		r = graphics(testTheme())
 		d = r.Parse(src)
-		r.Prepare(30, d)
+		prep(r, 30, d)
 		for _, l := range strings.Split(r.Render(d, 30), "\n") {
 			if w := ansi.StringWidth(l); w > 30 {
 				t.Errorf("%q: line %d wide: %q", src, w, ansi.Strip(l))
@@ -310,10 +310,10 @@ func TestHeadingPictureTooWide(t *testing.T) {
 func TestSetThemeRedraws(t *testing.T) {
 	r := graphics(DefaultTheme(true))
 	d := r.Parse("# Title")
-	r.Prepare(60, d)
+	prep(r, 60, d)
 	dark := r.Render(d, 60)
 	r.SetTheme(DefaultTheme(false))
-	seq := r.Prepare(60, d)
+	seq := prep(r, 60, d)
 	if !strings.Contains(seq, "a=d") || !strings.Contains(seq, "a=p") {
 		t.Errorf("new theme: %q", seq)
 	}
@@ -325,14 +325,14 @@ func TestSetThemeRedraws(t *testing.T) {
 func TestSetCaps(t *testing.T) {
 	r := New(Options{Theme: testTheme(), NewID: counter()})
 	d := r.Parse("# Title")
-	r.Prepare(60, d)
+	prep(r, 60, d)
 	text := r.Render(d, 60)
 	r.SetCaps(Caps{Graphics: true, Cell: kitty.Cell{W: 8, H: 16}})
-	if r.Prepare(60, d) == "" || r.Render(d, 60) == text {
+	if prep(r, 60, d) == "" || r.Render(d, 60) == text {
 		t.Error("caps reported later should bring pictures")
 	}
 	r.SetCaps(Caps{})
-	if seq := r.Prepare(60, d); !strings.Contains(seq, "a=d") {
+	if seq := prep(r, 60, d); !strings.Contains(seq, "a=d") {
 		t.Errorf("losing graphics should delete the pictures: %q", seq)
 	}
 }
@@ -340,7 +340,7 @@ func TestSetCaps(t *testing.T) {
 func TestTextSizingHeadings(t *testing.T) {
 	r := New(Options{Theme: testTheme(), Caps: Caps{Graphics: true, TextSizing: true, Cell: kitty.Cell{W: 8, H: 16}}, NewID: counter()})
 	d := r.Parse("# Big\n\n## Smaller\n\n### Small")
-	if seq := r.Prepare(60, d); seq != "" {
+	if seq := prep(r, 60, d); seq != "" {
 		t.Errorf("text sizing needs no pictures, Prepare sent %q", seq)
 	}
 	out := r.Render(d, 60)
@@ -436,7 +436,7 @@ func TestAlertPictures(t *testing.T) {
 		t.Fatal("pictures before Prepare")
 	}
 	// Two kinds: an icon and a bar each; the second note reuses them.
-	seq := r.Prepare(40, d)
+	seq := prep(r, 40, d)
 	if n := strings.Count(seq, "a=p"); n != 4 {
 		t.Fatalf("want 4 pictures, got %d", n)
 	}
@@ -451,11 +451,11 @@ func TestAlertPictures(t *testing.T) {
 		}
 	}
 	// A resize keeps them: they don't depend on the width.
-	if seq := r.Prepare(30, d); strings.Contains(seq, "a=p") || strings.Contains(seq, "a=d") {
+	if seq := prep(r, 30, d); strings.Contains(seq, "a=p") || strings.Contains(seq, "a=d") {
 		t.Errorf("resize resent glyphs: %q", seq)
 	}
 	// The warning left: its two go.
-	if seq := r.Prepare(30, r.Parse("> [!NOTE]\n> one")); strings.Count(seq, "a=d") != 2 {
+	if seq := prep(r, 30, r.Parse("> [!NOTE]\n> one")); strings.Count(seq, "a=d") != 2 {
 		t.Errorf("dropping the warning: %q", seq)
 	}
 	if seq := r.Close(); strings.Count(seq, "a=d") != 2 {
@@ -469,7 +469,7 @@ func TestAlertPictures(t *testing.T) {
 func TestAlertPicturesNeedGraphics(t *testing.T) {
 	r := New(Options{Theme: testTheme(), Caps: Caps{Graphics: true}}) // cell size unknown
 	d := r.Parse("> [!TIP]\n> x")
-	if seq := r.Prepare(40, d); seq != "" {
+	if seq := prep(r, 40, d); seq != "" {
 		t.Errorf("Prepare sent %q", seq)
 	}
 	if out := ansi.Strip(r.Render(d, 40)); !strings.Contains(out, "▎ ✦ Tip") {
@@ -477,7 +477,7 @@ func TestAlertPicturesNeedGraphics(t *testing.T) {
 	}
 	// Text sizing doesn't stop alert pictures.
 	r = New(Options{Theme: testTheme(), Caps: Caps{Graphics: true, TextSizing: true, Cell: kitty.Cell{W: 8, H: 16}}, NewID: counter()})
-	if seq := r.Prepare(40, r.Parse("> [!TIP]\n> x")); strings.Count(seq, "a=p") != 2 {
+	if seq := prep(r, 40, r.Parse("> [!TIP]\n> x")); strings.Count(seq, "a=p") != 2 {
 		t.Errorf("text sizing: %q", seq)
 	}
 }
@@ -485,15 +485,15 @@ func TestAlertPicturesNeedGraphics(t *testing.T) {
 func TestForget(t *testing.T) {
 	r := graphics(DefaultTheme(true))
 	d := r.Parse("# Title\n\n> [!NOTE]\n> x")
-	first := r.Prepare(40, d)
-	if r.Prepare(40, d) != "" {
+	first := prep(r, 40, d)
+	if prep(r, 40, d) != "" {
 		t.Fatal("nothing should be resent")
 	}
 	r.Forget()
 	if hasPlaceholder(r.Render(d, 40)) {
 		t.Error("placeholders for forgotten pictures")
 	}
-	again := r.Prepare(40, d)
+	again := prep(r, 40, d)
 	if strings.Contains(again, "a=d") || strings.Count(again, "a=p") != strings.Count(first, "a=p") {
 		t.Errorf("after Forget: %d placements, %d deletes; want %d and none",
 			strings.Count(again, "a=p"), strings.Count(again, "a=d"), strings.Count(first, "a=p"))
@@ -501,4 +501,10 @@ func TestForget(t *testing.T) {
 	if r.Close() == "" {
 		t.Error("Close should delete what was sent again")
 	}
+}
+
+// prep is Prepare without the jobs.
+func prep(r *Renderer, width int, docs ...*Doc) string {
+	seq, _ := r.Prepare(width, docs...)
+	return seq
 }

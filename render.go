@@ -32,6 +32,12 @@ type renderer struct {
 	// alertGlyphs gives an alert's icon and bar as pictures, or "" to
 	// draw them as text.
 	alertGlyphs func(k AlertKind, c color.Color) (icon, bar string)
+	// image gives an image's picture as placeholder lines if it fits
+	// width, else nil and a note for its link.
+	image func(url string, width int) (lines []string, note string)
+	// drawn are the images of the paragraph being drawn that are shown
+	// as pictures under it, so the text leaves them out.
+	drawn map[*ast.Image]bool
 }
 
 func (r *renderer) fg(c color.Color) lipgloss.Style { return lipgloss.NewStyle().Foreground(c) }
@@ -69,7 +75,7 @@ func (r *renderer) block(n ast.Node, width, depth int) []string {
 	case *ast.Heading:
 		return r.heading(n, width)
 	case *ast.Paragraph, *ast.TextBlock:
-		return r.wrap(r.inline(n, inlineStyle{}), width)
+		return r.paragraph(n, width)
 	case *ast.List:
 		return r.list(n, width, depth)
 	case *ast.FencedCodeBlock:
@@ -195,6 +201,36 @@ func (r *renderer) sizedHeading(level int, text string, fg color.Color, width in
 		if l = strings.TrimRight(l, " "); l != "" {
 			out = append(out, st.Styled(kitty.TextSize(l, headingSizes[level])), "")
 		}
+	}
+	return out
+}
+
+// paragraph draws a paragraph's text, then the pictures of its images
+// that have one, each under the text.
+func (r *renderer) paragraph(n ast.Node, width int) []string {
+	var pics [][]string
+	if r.image != nil {
+		_ = ast.Walk(n, func(c ast.Node, entering bool) (ast.WalkStatus, error) {
+			im, ok := c.(*ast.Image)
+			if !ok || !entering {
+				return ast.WalkContinue, nil
+			}
+			if lines, _ := r.image(string(im.Destination), width); lines != nil {
+				if r.drawn == nil {
+					r.drawn = map[*ast.Image]bool{}
+				}
+				r.drawn[im] = true
+				pics = append(pics, lines)
+			}
+			return ast.WalkSkipChildren, nil
+		})
+	}
+	var out []string
+	if text := r.inline(n, inlineStyle{}); strings.TrimSpace(ansi.Strip(text)) != "" {
+		out = r.wrap(text, width)
+	}
+	for _, p := range pics {
+		out = append(out, p...)
 	}
 	return out
 }
@@ -611,14 +647,25 @@ func (r *renderer) inlineNode(n ast.Node, st inlineStyle) string {
 		ls.underline, ls.fg = true, r.th.Blue
 		return ansi.SetHyperlink(url) + r.render(string(n.Label(r.src)), ls) + ansi.ResetHyperlink()
 	case *ast.Image:
-		// A link to the image, until images are drawn.
+		if r.drawn[n] {
+			return "" // drawn as a picture under the paragraph
+		}
+		// A link to the image, with why there's no picture yet.
 		name := plainText(n, r.src)
 		if name == "" {
 			name = "image"
 		}
 		ls := st
 		ls.underline, ls.fg = true, r.th.Blue
-		return ansi.SetHyperlink(string(n.Destination)) + r.render(r.th.ImageIcon+" "+name, ls) + ansi.ResetHyperlink()
+		link := ansi.SetHyperlink(string(n.Destination)) + r.render(r.th.ImageIcon+" "+name, ls) + ansi.ResetHyperlink()
+		if r.image != nil {
+			if _, note := r.image(string(n.Destination), 0); note != "" {
+				ms := st
+				ms.fg = r.th.Muted
+				link += r.render(" ("+note+")", ms)
+			}
+		}
+		return link
 	case *ast.RawHTML:
 		var b strings.Builder
 		for i := 0; i < n.Segments.Len(); i++ {

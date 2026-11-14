@@ -1,6 +1,8 @@
 package markdown
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -48,11 +50,12 @@ func TestGolden(t *testing.T) {
 		base := strings.TrimSuffix(in, ".md")
 		for _, c := range goldenCaps {
 			t.Run(filepath.Base(base)+"/"+c.name, func(t *testing.T) {
-				r := New(Options{Theme: DefaultTheme(true), Caps: c.caps, NewID: counter()})
+				r := New(Options{Theme: DefaultTheme(true), Caps: c.caps, NewID: counter(), Fetch: goldenFetch})
 				doc := r.Parse(string(src))
 				var out strings.Builder
 				for _, w := range goldenWidths {
-					r.Prepare(w, doc)
+					_, jobs := r.Prepare(w, doc)
+					runAll(r, jobs)
 					s := r.Render(doc, w)
 					for i, l := range strings.Split(s, "\n") {
 						if lw := cellWidth(l, c.caps.Width); lw > w {
@@ -93,6 +96,15 @@ func cellWidth(line string, m ansi.Method) int {
 // showSized writes OSC 66 text as ⟦meta|text⟧, so the plain golden files
 // show it.
 func showSized(s string) string { return osc66.ReplaceAllString(s, "⟦$1|$2⟧") }
+
+// goldenFetch serves the test card for any .png and fails for anything
+// else, so the image golden files show both.
+func goldenFetch(_ context.Context, url string) ([]byte, error) {
+	if strings.HasSuffix(url, ".png") {
+		return os.ReadFile("kitty/testdata/testcard.png")
+	}
+	return nil, errors.New("404 not found")
+}
 
 func check(t *testing.T, path, got string) {
 	t.Helper()
