@@ -11,7 +11,7 @@ go get github.com/ionut-maxim/markdown
 
 ## What it draws
 
-- **Headings** at full size: kitty's text sizing protocol (OSC 66) where the terminal supports it, headings drawn as images where it only has kitty graphics, and bold coloured text elsewhere.
+- **Headings** at full size: drawn as images in terminals with kitty graphics, and as bold coloured text elsewhere. Programs that write straight to the terminal can use kitty's text sizing (OSC 66) instead; Bubble Tea v2 drops OSC 66 from its views, so Bubble Tea apps get the images.
 - **Lists:** nested, ordered from any number, and task lists.
 - **Tables:** column alignment, cells that wrap, and wide characters (CJK, emoji) measured correctly.
 - **Code** highlighted with [Chroma](https://github.com/alecthomas/chroma).

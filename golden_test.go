@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -26,6 +28,7 @@ var goldenCaps = []struct {
 }{
 	{"text", Caps{}},
 	{"graphics", Caps{Graphics: true, Cell: kitty.Cell{W: 8, H: 16}}},
+	{"textsizing", Caps{Graphics: true, TextSizing: true, Cell: kitty.Cell{W: 8, H: 16}}},
 }
 
 // TestGolden renders each testdata/golden/*.md for every terminal and
@@ -52,7 +55,7 @@ func TestGolden(t *testing.T) {
 					r.Prepare(w, doc)
 					s := r.Render(doc, w)
 					for i, l := range strings.Split(s, "\n") {
-						if lw := ansi.StringWidth(l); lw > w {
+						if lw := cellWidth(l); lw > w {
 							t.Errorf("width %d, line %d is %d wide: %q", w, i+1, lw, ansi.Strip(l))
 						}
 					}
@@ -62,11 +65,34 @@ func TestGolden(t *testing.T) {
 					fmt.Fprintf(&out, "=== width %d ===\n%s\n", w, s)
 				}
 				check(t, base+"."+c.name+".ansi", out.String())
-				check(t, base+"."+c.name+".txt", ansi.Strip(out.String()))
+				check(t, base+"."+c.name+".txt", ansi.Strip(showSized(out.String())))
 			})
 		}
 	}
 }
+
+// osc66 matches a kitty text sizing sequence: its metadata and text.
+var osc66 = regexp.MustCompile("\x1b\\]66;([^;]*);([^\a\x1b]*)(?:\a|\x1b\\\\)")
+
+// cellWidth is how many cells a line takes, counting text drawn with
+// OSC 66 at its scale (ansi.StringWidth counts it as nothing).
+func cellWidth(line string) int {
+	w := 0
+	for _, m := range osc66.FindAllStringSubmatch(line, -1) {
+		scale := 1
+		for _, kv := range strings.Split(m[1], ":") {
+			if v, ok := strings.CutPrefix(kv, "s="); ok {
+				scale, _ = strconv.Atoi(v)
+			}
+		}
+		w += scale * ansi.StringWidth(m[2])
+	}
+	return w + ansi.StringWidth(osc66.ReplaceAllString(line, ""))
+}
+
+// showSized writes OSC 66 text as ⟦meta|text⟧, so the plain golden files
+// show it.
+func showSized(s string) string { return osc66.ReplaceAllString(s, "⟦$1|$2⟧") }
 
 func check(t *testing.T, path, got string) {
 	t.Helper()

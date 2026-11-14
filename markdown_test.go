@@ -278,3 +278,32 @@ func TestSetCaps(t *testing.T) {
 		t.Errorf("losing graphics should delete the pictures: %q", seq)
 	}
 }
+
+func TestTextSizingHeadings(t *testing.T) {
+	r := New(Options{Theme: testTheme(), Caps: Caps{Graphics: true, TextSizing: true, Cell: kitty.Cell{W: 8, H: 16}}, NewID: counter()})
+	d := r.Parse("# Big\n\n## Smaller\n\n### Small")
+	if seq := r.Prepare(60, d); seq != "" {
+		t.Errorf("text sizing needs no pictures, Prepare sent %q", seq)
+	}
+	out := r.Render(d, 60)
+	lines := strings.Split(out, "\n")
+	if !strings.Contains(lines[0], "\x1b]66;s=2;Big\a") || lines[1] != "" {
+		t.Errorf("level 1: %q then %q (the row under big text must stay empty)", lines[0], lines[1])
+	}
+	if !strings.Contains(out, "\x1b]66;s=2:n=3:d=4:v=2;Smaller\a") {
+		t.Errorf("level 2 not sized: %q", out)
+	}
+	if strings.Contains(out, "66;s=2;Small\a") || !strings.Contains(ansi.Strip(out), "Small") {
+		t.Errorf("level 3 should be plain text: %q", out)
+	}
+	if hasPlaceholder(out) {
+		t.Error("placeholders with text sizing")
+	}
+}
+
+func TestTextSizingWithoutGraphics(t *testing.T) {
+	r := New(Options{Theme: testTheme(), Caps: Caps{TextSizing: true}})
+	if out := r.Render(r.Parse("# Title"), 40); !strings.Contains(out, "\x1b]66;s=2;Title\a") {
+		t.Errorf("text sizing doesn't need graphics: %q", out)
+	}
+}
