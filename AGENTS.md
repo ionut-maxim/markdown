@@ -12,7 +12,7 @@ Its first users are rexkit and the apps built on it, which run in Rex tabs, so c
 - **The core doesn't import Bubble Tea.** Only `teamd` and `cmd/mdview` do.
 - **Imports:** Charm v2 (`charm.land/lipgloss/v2`, `charm.land/bubbletea/v2`) and `github.com/charmbracelet/x/ansi`. Never the v1 `github.com/charmbracelet/...` paths.
 - **Pictures as text.** Kitty images use Unicode placeholders only, never direct placements. Pictures are sent from `Prepare`, never while rendering a view, and deleted on `Close`.
-- **Tests:** `mise run check` before every commit (gofmt, vet, tests). Rendered output has golden files in `testdata/`; rewrite them with `go test ./... -update` and read the diff before committing.
+- **Tests:** `mise run check` before every commit (gofmt, vet, tests). Rendered output has golden files in `testdata/`; rewrite them with `go test . -update` and read the diff before committing.
 - **Output changes are breaking for apps.** Apps compare screen snapshots byte for byte. A change to what the renderer draws is a `feat` with a note in the PR, or `feat!` when callers must change.
 - **Dependency versions:** keep `chroma` and `goldmark` in step with rexkit and the apps. A version bump can change highlighted output.
 
