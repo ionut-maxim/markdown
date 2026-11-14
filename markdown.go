@@ -39,10 +39,13 @@ type Caps struct {
 	Width ansi.Method
 }
 
-// pictures is true when headings are drawn as pictures.
-func (c Caps) pictures() bool {
-	return c.Graphics && !c.TextSizing && c.Cell.W > 0 && c.Cell.H > 0
-}
+// graphics is true when pictures can be drawn: kitty graphics, and the
+// cell size known.
+func (c Caps) graphics() bool { return c.Graphics && c.Cell.W > 0 && c.Cell.H > 0 }
+
+// pictures is true when headings are drawn as pictures: text sizing
+// draws them bigger itself.
+func (c Caps) pictures() bool { return c.graphics() && !c.TextSizing }
 
 // Options configure a Renderer.
 type Options struct {
@@ -67,6 +70,7 @@ type Renderer struct {
 	opt      Options
 	md       goldmark.Markdown
 	headings map[headingKey]*picture
+	glyphs   map[glyphKey]*picture
 	gen      int // bumped whenever what Render draws may change
 }
 
@@ -94,6 +98,7 @@ func New(opt Options) *Renderer {
 		md: goldmark.New(goldmark.WithExtensions(extension.GFM),
 			goldmark.WithParserOptions(parser.WithASTTransformers(util.Prioritized(alertTransformer{}, 1000)))),
 		headings: map[headingKey]*picture{},
+		glyphs:   map[glyphKey]*picture{},
 	}
 }
 
@@ -169,6 +174,12 @@ func colorKey(c color.Color) [4]uint32 {
 // the documents, the width, the theme or the caps change, and send what
 // it returns (with tea.Raw in Bubble Tea). It returns "" when nothing
 // changed.
+//
+// Pictures belong to the screen they were sent on: the main screen and
+// the alternate one keep their own, and entering the alternate screen or
+// clearing it drops them. Send what Prepare returns once the program is
+// on the screen it draws to (in Bubble Tea, after the first frame), and
+// after a switch or a clear call Forget, then Prepare again.
 func (r *Renderer) Prepare(width int, docs ...*Doc) string {
 	width = max(width, minWidth)
 	// The headings wanted, in document order so ids are given out in
@@ -196,6 +207,8 @@ func (r *Renderer) Prepare(width int, docs ...*Doc) string {
 			r.gen++
 		}
 	}
+	glyphs := r.wantGlyphs(docs)
+	gone = append(gone, r.dropGlyphs(glyphs)...)
 	var seq strings.Builder
 	seq.WriteString(deletes(gone))
 	for _, k := range order {
@@ -221,12 +234,13 @@ func (r *Renderer) Prepare(width int, docs ...*Doc) string {
 		r.headings[k] = p
 		r.gen++
 	}
+	r.sendGlyphs(glyphs, &seq)
 	return seq.String()
 }
 
 // Close returns the escape sequences that delete every picture this
 // Renderer sent. Send it when the screen closes. The Renderer can be
-// used again; it draws headings as text until the next Prepare.
+// used again; it draws text until the next Prepare.
 func (r *Renderer) Close() string {
 	var gone []int
 	for k, p := range r.headings {
@@ -235,8 +249,18 @@ func (r *Renderer) Close() string {
 		}
 		delete(r.headings, k)
 	}
+	gone = append(gone, r.dropGlyphs(nil)...)
 	r.gen++
 	return deletes(gone)
+}
+
+// Forget forgets the pictures sent so far without deleting them, for
+// when the terminal has dropped them itself (the screen switched or was
+// cleared): the next Prepare sends everything again.
+func (r *Renderer) Forget() {
+	clear(r.headings)
+	clear(r.glyphs)
+	r.gen++
 }
 
 // deletes is the sequences that delete the images ids, lowest id first.
@@ -263,7 +287,8 @@ func (r *Renderer) Render(d *Doc, width int) string {
 	if s, ok := d.cache[width]; ok {
 		return s
 	}
-	rr := &renderer{src: d.src, th: r.opt.Theme, picture: r.headingLines, textSizing: r.opt.Caps.TextSizing, m: r.opt.Caps.Width}
+	rr := &renderer{src: d.src, th: r.opt.Theme, picture: r.headingLines, alertGlyphs: r.alertGlyphs,
+		textSizing: r.opt.Caps.TextSizing, m: r.opt.Caps.Width}
 	s := strings.Join(rr.blocks(d.root, width, 0), "\n")
 	d.cache[width] = s
 	return s

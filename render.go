@@ -29,6 +29,9 @@ type renderer struct {
 	textSizing bool
 	// m measures text the way the terminal does.
 	m ansi.Method
+	// alertGlyphs gives an alert's icon and bar as pictures, or "" to
+	// draw them as text.
+	alertGlyphs func(k AlertKind, c color.Color) (icon, bar string)
 }
 
 func (r *renderer) fg(c color.Color) lipgloss.Style { return lipgloss.NewStyle().Foreground(c) }
@@ -74,7 +77,7 @@ func (r *renderer) block(n ast.Node, width, depth int) []string {
 	case *ast.CodeBlock:
 		return r.code("", r.lines(n), width)
 	case *ast.Blockquote:
-		return r.barred(r.blocks(n, width-2, depth), r.th.Accent2)
+		return barred(r.blocks(n, width-2, depth), r.fg(r.th.Accent2).Render(r.th.Quote))
 	case *alert:
 		return r.alert(n, width, depth)
 	case *ast.ThematicBreak:
@@ -140,17 +143,27 @@ func (r *renderer) heading(n *ast.Heading, width int) []string {
 }
 
 // alert draws a GitHub alert: a bar in the alert's colour, its icon and
-// title, then its blocks.
+// title, then its blocks. With kitty graphics the icon is the Octicon
+// GitHub shows, and the bar a picture without seams.
 func (r *renderer) alert(n *alert, width, depth int) []string {
 	c := r.th.alertColor(n.kind)
-	title := lipgloss.NewStyle().Foreground(c).Bold(true).Render(r.th.alertIcon(n.kind) + " " + n.kind.String())
-	return r.barred(append([]string{title}, r.blocks(n, width-2, depth)...), c)
+	var icon, bar string
+	if r.alertGlyphs != nil {
+		icon, bar = r.alertGlyphs(n.kind, c)
+	}
+	style := lipgloss.NewStyle().Foreground(c).Bold(true)
+	title := style.Render(r.th.alertIcon(n.kind) + " " + n.kind.String())
+	if icon != "" {
+		title = icon + " " + style.Render(n.kind.String())
+	}
+	if bar == "" {
+		bar = r.fg(c).Render(r.th.Quote)
+	}
+	return barred(append([]string{title}, r.blocks(n, width-2, depth)...), bar)
 }
 
-// barred puts the quote bar, in colour c, before each line; a blank line
-// gets the bar alone.
-func (r *renderer) barred(lines []string, c color.Color) []string {
-	bar := r.fg(c).Render(r.th.Quote)
+// barred puts bar before each line; a blank line gets the bar alone.
+func barred(lines []string, bar string) []string {
 	for i, l := range lines {
 		if l == "" {
 			lines[i] = bar
