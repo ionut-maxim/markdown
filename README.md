@@ -17,6 +17,7 @@ go get github.com/ionut-maxim/markdown
 - **Code** highlighted with [Chroma](https://github.com/alecthomas/chroma).
 - **GitHub alerts:** `> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]` and `[!CAUTION]`.
 - **Images and Mermaid diagrams** with kitty graphics, using Unicode placeholders so they scroll and clip with the text. Without kitty graphics they show as links and code.
+- **Mermaid** drawn in pure Go with [go-mermaid](https://github.com/zkrebbekx/go-mermaid), in the theme's colours: no browser, no Node, no network. Apps can bring their own `Diagrammer`, or turn diagrams off with `NoDiagrams`.
 
 Markdown is parsed with [goldmark](https://github.com/yuin/goldmark) and its GFM extensions.
 
@@ -27,7 +28,6 @@ Markdown is parsed with [goldmark](https://github.com/yuin/goldmark) and its GFM
 | `markdown` | The renderer: parse once, render for a width, and send pictures only when they change. Made for Bubble Tea views that redraw often. |
 | `kitty` | Kitty graphics with Unicode placeholders: send an image once, draw it as text cells. |
 | `bigtext` | Headings drawn as images, for terminals with kitty graphics but no text sizing. |
-| `mermaid` | Mermaid diagrams drawn as images, without a browser or Node. |
 | `teamd` | Helpers for Bubble Tea v2 apps: the renderer's work as `tea.Cmd` values. |
 | `cmd/mdview` | A pager for checking the output by eye: `go run github.com/ionut-maxim/markdown/cmd/mdview file.md`. |
 

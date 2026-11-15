@@ -38,6 +38,9 @@ type renderer struct {
 	// drawn are the images of the paragraph being drawn that are shown
 	// as pictures under it, so the text leaves them out.
 	drawn map[*ast.Image]bool
+	// diagram gives a Mermaid diagram's picture as placeholder lines if it
+	// fits width, else nil and, if it can't be drawn, why.
+	diagram func(src string, width int) (lines []string, note string)
 }
 
 func (r *renderer) fg(c color.Color) lipgloss.Style { return lipgloss.NewStyle().Foreground(c) }
@@ -79,6 +82,17 @@ func (r *renderer) block(n ast.Node, width, depth int) []string {
 	case *ast.List:
 		return r.list(n, width, depth)
 	case *ast.FencedCodeBlock:
+		if isMermaid(n, r.src) && r.diagram != nil {
+			lines, note := r.diagram(codeSource(n, r.src), width)
+			if lines != nil {
+				return lines
+			}
+			out := r.code(string(n.Language(r.src)), r.lines(n), width)
+			if note != "" {
+				out = append(out, r.fg(r.th.Muted).Render(r.m.Truncate(note, width, "…")))
+			}
+			return out
+		}
 		return r.code(string(n.Language(r.src)), r.lines(n), width)
 	case *ast.CodeBlock:
 		return r.code("", r.lines(n), width)

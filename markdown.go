@@ -64,6 +64,12 @@ type Options struct {
 	Fetch func(ctx context.Context, url string) ([]byte, error)
 	// MaxImageRows is the tallest an image is drawn, in rows; 0 means 20.
 	MaxImageRows int
+	// Diagrams draws ```mermaid blocks as pictures (with kitty graphics);
+	// nil means GoMermaid, and NoDiagrams shows their source instead.
+	Diagrams Diagrammer
+	// MaxDiagramRows is the tallest a diagram is drawn, in rows; 0 means
+	// 40.
+	MaxDiagramRows int
 }
 
 // Renderer renders markdown documents and owns the pictures it sends to
@@ -184,9 +190,10 @@ func colorKey(c color.Color) [4]uint32 {
 // it returns (with tea.Raw in Bubble Tea). It returns "" when nothing
 // changed.
 //
-// It also returns a Job for each image not fetched yet (only with
-// Options.Fetch and kitty graphics). Run them off the UI goroutine and
-// pass each Result to Loaded.
+// It also returns a Job for each image not fetched yet (with
+// Options.Fetch) and each diagram not drawn yet, when the terminal has
+// kitty graphics. Run them off the UI goroutine and pass each Result to
+// Loaded.
 //
 // Pictures belong to the screen they were sent on: the main screen and
 // the alternate one keep their own, and entering the alternate screen or
@@ -313,6 +320,7 @@ func (r *Renderer) Render(d *Doc, width int) string {
 		return s
 	}
 	rr := &renderer{src: d.src, th: r.opt.Theme, picture: r.headingLines, alertGlyphs: r.alertGlyphs, image: r.imageView,
+		diagram:    r.diagramView,
 		textSizing: r.opt.Caps.TextSizing, m: r.opt.Caps.Width}
 	s := strings.Join(rr.blocks(d.root, width, 0), "\n")
 	d.cache[width] = s

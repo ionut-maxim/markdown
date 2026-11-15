@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"image"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -50,7 +51,7 @@ func TestGolden(t *testing.T) {
 		base := strings.TrimSuffix(in, ".md")
 		for _, c := range goldenCaps {
 			t.Run(filepath.Base(base)+"/"+c.name, func(t *testing.T) {
-				r := New(Options{Theme: DefaultTheme(true), Caps: c.caps, NewID: counter(), Fetch: goldenFetch})
+				r := New(Options{Theme: DefaultTheme(true), Caps: c.caps, NewID: counter(), Fetch: goldenFetch, Diagrams: goldenDiagrams{}})
 				doc := r.Parse(string(src))
 				var out strings.Builder
 				for _, w := range goldenWidths {
@@ -104,6 +105,19 @@ func goldenFetch(_ context.Context, url string) ([]byte, error) {
 		return os.ReadFile("kitty/testdata/testcard.png")
 	}
 	return nil, errors.New("404 not found")
+}
+
+// goldenDiagrams draws every diagram as a 400×200 picture, two rows of
+// text tall per 100 pixels at TextHeight 50, and fails for sources that
+// say "broken": the golden files then show pictures and the fallback
+// without depending on go-mermaid's drawing.
+type goldenDiagrams struct{}
+
+func (goldenDiagrams) Draw(_ context.Context, d Diagram) (image.Image, error) {
+	if strings.Contains(d.Source, "broken") {
+		return nil, errors.New("mermaid: parse error: line 1: unexpected token")
+	}
+	return image.NewRGBA(image.Rect(0, 0, 400, 200)), nil
 }
 
 func check(t *testing.T, path, got string) {
