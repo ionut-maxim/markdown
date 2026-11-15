@@ -31,6 +31,18 @@ Markdown is parsed with [goldmark](https://github.com/yuin/goldmark) and its GFM
 | `teamd` | Helpers for Bubble Tea v2 apps: the renderer's work as `tea.Cmd` values. |
 | `cmd/mdview` | A pager for checking the output by eye: `go run github.com/ionut-maxim/markdown/cmd/mdview file.md`. |
 
+## Try it
+
+```sh
+go run github.com/ionut-maxim/markdown/cmd/mdview file.md
+```
+
+`mdview` is a pager built on `teamd`. Scroll with the arrow keys, `j`/`k`, space and `b`, the mouse wheel or a drag. Press `t` to force the text fallback, `d` to switch between dark and light, `[` and `]` to change the width, and `q` to quit. The bottom line shows what it detected about the terminal.
+
+- Images load from paths next to the file. Web images are fetched only with `-fetch`.
+- `-print` prints the file straight to the terminal instead of paging. In kitty, headings are then drawn with its text sizing (OSC 66), which Bubble Tea programs can't use.
+- `testdata/sample/sample.md` shows everything the renderer draws.
+
 ## Licence
 
 MIT, see `LICENSE`. JetBrains Mono is under the SIL Open Font License 1.1 (`bigtext/fonts/OFL.txt`).
