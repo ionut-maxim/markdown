@@ -1,7 +1,7 @@
 // Package markdown renders GitHub Flavored Markdown in the terminal.
 //
 // Headings are drawn bigger where the terminal can (kitty graphics),
-// images and alert icons are drawn with kitty graphics, code is
+// images, Mermaid diagrams and alert icons are drawn with kitty graphics, code is
 // highlighted with Chroma, tables are grids, and every terminal gets a
 // clean text fallback.
 //
@@ -17,5 +17,5 @@
 //	seq = r.Close()                    // when the screen closes: send seq
 //
 // Images come only through the caller's Fetch: the library never goes on
-// the network itself.
+// the network itself. Mermaid diagrams are drawn in Go (Options.Diagrams).
 package markdown
