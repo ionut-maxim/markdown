@@ -125,6 +125,9 @@ func (r *Renderer) SetTheme(th Theme) { r.opt.Theme = th; r.gen++ }
 // answered the queries. Call Prepare afterwards.
 func (r *Renderer) SetCaps(c Caps) { r.opt.Caps = c; r.gen++ }
 
+// Caps is what the Renderer takes the terminal to be able to do.
+func (r *Renderer) Caps() Caps { return r.opt.Caps }
+
 // Doc is a parsed markdown document. Parse it once and render it as often
 // as needed; it keeps the last output for each width.
 type Doc struct {
